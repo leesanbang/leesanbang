@@ -1,0 +1,311 @@
+<html lang="ko">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웰니스 점검 페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+    background: url('./에가톳 로고 오두막.jpg') no-repeat center center;
+    background-size: cover;
+    height: 400px; /* 기본 데스크톱 높이 */
+}
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+    header {
+        height: 200px; /* 모바일 화면에서 적절한 높이로 변경 */
+        background-size: cover;
+        background-position: center;
+    }
+}
+        .page.hidden {
+            display: none;
+        }
+        .button {
+        padding: 10px 15px;
+        color: white; /* 텍스트 색상 */
+        background-color: black; /* 버튼 배경색 */
+        border-radius: 5px;
+        cursor: pointer;
+        border: none; /* 테두리 제거 */
+    }
+    .button:hover {
+        background-color: #333; /* 버튼 호버 시 어두운 회색 */
+    }
+        #chart-container {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .red-text {
+            color: red;
+        }
+</style>
+    <script>
+        let totalScore = 0;
+        const scores = {
+            Physical: 0,
+            Emotional: 0,
+            Social: 0,
+            Spiritual: 0,
+            Intellectual: 0,
+            Environmental: 0,
+            Financial: 0,
+            Occupational: 0
+        };
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        function calculatePageScore(pageId, category) {
+            const checkboxes = document.querySelectorAll(`#${pageId} input[type="checkbox"]`);
+            let categoryScore = 0;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    categoryScore++;
+                }
+            });
+            scores[category] += categoryScore;
+            totalScore += categoryScore;
+        }
+
+        function nextPage(currentPageId, nextPageId, category = null) {
+            if (category) calculatePageScore(currentPageId, category);
+            if (nextPageId === 'result-page') {
+                showFinalScore();
+            } else {
+                showPage(nextPageId);
+            }
+        }
+
+        function prevPage(previousPageId) {
+            showPage(previousPageId);
+        }
+
+        function showFinalScore() {
+            const ctx = document.getElementById('result-chart').getContext('2d');
+
+            // 이전 차트 초기화
+            if (Chart.getChart("result-chart")) {
+                Chart.getChart("result-chart").destroy();
+            }
+
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(scores),
+                    datasets: [{
+                        label: '웰니스 점수',
+                        data: Object.values(scores),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+
+            let resultText = "";
+            let resultClass = "";
+
+            if (totalScore >= 50 && totalScore <= 64) {
+                resultText = "훌륭한 웰니스 점수다. 한 영역의 점수가 특별히 높거나 낮지 않고, 8가지 항목이 비슷한 수치라면 더 바람직하다.";
+            } else if (totalScore >= 35 && totalScore <= 49) {
+                resultText = "웰니스 라이프를 향해가는 당신! 체크리스트를 통해 부족한 영역을 확인하고 찬찬히 채우는 노력을 해보자.";
+            } else if (totalScore >= 20 && totalScore <= 34) {
+                resultText = "삶의 질이 낮다고 느껴지는 상태다. 마음의 여유를 갖고 기초 항목부터 실천한다면 금세 나아질 것이다.";
+            } else if (totalScore >= 0 && totalScore <= 19) {
+                resultText = "웰니스 지수 빨간불! 스스로를 아끼고 돌보는 하루를 갖는 것부터 시작해보면 어떨까?";
+                resultClass = "red-text"; // 텍스트를 빨간색으로 표시
+            }
+
+            document.getElementById("result").innerHTML = `<strong>총 체크된 항목 수: ${totalScore}개</strong><br><span class="${resultClass}">${resultText}</span>`;
+
+            showPage('result-page');
+        }
+
+        function resetScores() {
+            // 점수 초기화
+            totalScore = 0;
+            Object.keys(scores).forEach(key => scores[key] = 0);
+
+            // 체크박스 초기화
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // 초기 페이지로 이동
+            showPage('intro-page');
+        }
+</script>
+</head>
+<body>
+    <header></header>
+    <main>
+        <!-- Intro Page -->
+        <section id="intro-page" class="page">
+            <h2>인트로</h2>
+            <p>진정한 웰니스 라이프란 무엇일까요? 웰니스의 8가지 영역을 소개하고 체크리스트를 통해 자신의 삶을 점검해보세요.</p>
+            <button class="button" onclick="showPage('Physical')">시작하기</button>
+        </section>
+
+        <!-- Physical Page -->
+        <section id="Physical" class="page hidden">
+            <h2>Physical</h2>
+            <ul>
+                <li><input type="checkbox"> 나의 몸무게, 체질량 지수를 정확히 알고 적당한 수치로 유지하려고 노력한다.</li>
+                <li><input type="checkbox"> 일주일에 2~3회 꾸준히 운동한다.</li>
+                <li><input type="checkbox"> 신선한 채소, 과일을 매일 섭취한다.</li>
+                <li><input type="checkbox"> 흡연하지 않는다.</li>
+                <li><input type="checkbox"> 알코올, 카페인, 당류를 멀리한다.</li>
+                <li><input type="checkbox"> 매일 7~8시간 동안 숙면을 취한다.</li>
+                <li><input type="checkbox"> 정기적으로 건강검진을 받는다.</li>
+                <li><input type="checkbox"> 가족력과 위험 질병을 알고, 이를 예방하려고 식습관이나 생활 습관을 개선한다.</li>
+                <li><input type="checkbox"> 안전한 성생활을 한다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('intro-page')">이전</button>
+            <button class="button" onclick="nextPage('Physical', 'Emotional', 'Physical')">다음</button>        </section>
+
+        <!-- Emotional Page -->
+        <section id="Emotional" class="page hidden">
+            <h2>Emotional</h2>
+            <ul>
+                <li><input type="checkbox"> 내가 느끼는 감정에 대해 잘 알고 있고, 이를 인정한다.</li>
+                <li><input type="checkbox"> 내 감정과 생각을 편안하게 이야기할 수 있는 사람이 있다.</li>
+                <li><input type="checkbox"> 실수를 하면 좌절하지 않고 이로부터 배우는 자세를 갖췄다.</li>
+                <li><input type="checkbox"> 내가 한 행동에 책임을 진다.</li>
+                <li><input type="checkbox"> 타인이 내 생각이나 행동을 지적해도 금방 극복한다.</li>
+                <li><input type="checkbox"> 스트레스를 해소하는 나만의 방법이 있다.</li>
+                <li><input type="checkbox"> 스트레스를 받는 상황에서 그 원인과 감정을 분리해서 생각할 수 있다.</li>
+                <li><input type="checkbox"> 언제나 긍정적으로 생각한다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Physical')">이전</button>
+            <button class="button" onclick="nextPage('Emotional', 'Social', 'Emotional')">다음</button>        </section>
+
+        <!-- Social Page -->
+        <section id="Social" class="page hidden">
+            <h2>Social</h2>
+            <ul>
+                <li><input type="checkbox"> 대화가 필요할 때 편하게 연락할 수 있는 사람이 있다.</li>
+                <li><input type="checkbox"> 주변인이 내 결정과 행보를 응원하고 격려한다.</li>
+                <li><input type="checkbox"> 함께 식사하고, 커피 마시는 등 개인적 친목 활동을 한다.</li>
+                <li><input type="checkbox"> 관심사를 공유하는 그룹이 있다.</li>
+                <li><input type="checkbox"> 나와 성향이나 가치관, 배경이 다른 사람을 만나는 것에 열려 있다.</li>
+                <li><input type="checkbox"> 아무리 바빠도 소중한 사람과 함께 보내는 시간을 따로 남겨둔다.</li>
+                <li><input type="checkbox"> 새로운 사람을 만날 수 있는 장소에 가거나 동호회에 참여한다.</li>
+                <li><input type="checkbox"> 타인과 소통할 때 무례를 범하지 않도록 조심하고 배려한다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Emotional')">이전</button>
+            <button class="button" onclick="nextPage('Social', 'Spiritual', 'Social')">다음</button>        </section>
+
+        <!-- Spiritual Page -->
+        <section id="Spiritual" class="page hidden">
+            <h2>Spiritual</h2>
+            <ul>
+                <li><input type="checkbox"> 삶의 목적이 뚜렷하다.</li>
+                <li><input type="checkbox"> 나만의 신념과 가치관이 확고하다.</li>
+                <li><input type="checkbox"> 신념과 가치관에 따라 말하고 행동한다.</li>
+                <li><input type="checkbox"> 다양한 종교와 철학, 윤리에 대해 알고자 노력하고 그것들을 존중한다.</li>
+                <li><input type="checkbox"> 종교가 있거나 영적인 믿음을 갖고 있다.</li>
+                <li><input type="checkbox"> 어려움에 처하거나 곤경에 빠진 사람이 있을 때 주저 없이 돕는다.</li>
+                <li><input type="checkbox"> 매일 혹은 주기적으로 명상을 하고 자기반성의 시간을 갖는다.</li>
+                <li><input type="checkbox"> 삶이 힘들고 고통스러울 때도 성장하기 위해 노력한다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Social')">이전</button>
+            <button class="button" onclick="nextPage('Spiritual', 'Intellectual', 'Spiritual')">다음</button>        </section>
+
+        <!-- Intellectual Page -->
+        <section id="Intellectual" class="page hidden">
+            <h2>Intellectual</h2>
+            <ul>
+                <li><input type="checkbox"> 자기 계발을 위한 스터디나 클래스, 학원을 다닌다.</li>
+                <li><input type="checkbox"> 책 읽기를 즐긴다.</li>
+                <li><input type="checkbox"> 도서관, 서점을 주기적으로 방문한다.</li>
+                <li><input type="checkbox"> 전시회에서 예술 작품을 감상한다.</li>
+                <li><input type="checkbox"> 제2외국어를 구사할 줄 알거나, 새로운 언어를 배우는 중이다.</li>
+                <li><input type="checkbox"> 사람들과 시사, 정치 등의 주제에 대해 이야기 나누는 것을 즐긴다.</li>
+                <li><input type="checkbox"> 뉴스를 정독하고 관심을 갖는다.</li>
+                <li><input type="checkbox"> 그림 그리기, 글쓰기 등의 창의적 활동을 한다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Spiritual')">이전</button>
+            <button class="button" onclick="nextPage('Intellectual', 'Environmental', 'Intellectual')">다음</button>        </section>
+
+        <!-- Environmental Page -->
+        <section id="Environmental" class="page hidden">
+            <h2>Environmental</h2>
+            <ul>
+                <li><input type="checkbox"> 제품 구매 시 재활용 표시를 살핀다.</li>
+                <li><input type="checkbox"> 세안하고 샤워할 때 물을 아끼려고 노력한다.</li>
+                <li><input type="checkbox"> 쓰지 않는 가전제품의 플러그는 빼놓는다.</li>
+                <li><input type="checkbox"> 대중교통을 주로 이용한다.</li>
+                <li><input type="checkbox"> 일주일에 1회 이상 피크닉, 산책, 등산 등의 야외 활동을 즐긴다.</li>
+                <li><input type="checkbox"> 업무 시 서류를 인쇄하는 대신 이메일, 전자 결제를 이용한다.</li>
+                <li><input type="checkbox"> 업무 공간이 잘 정돈되어 있다.</li>
+                <li><input type="checkbox"> 집을 내가 좋아하는 스타일로 꾸몄고, 이 공간에서 편안함을 느낀다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Intellectual')">이전</button>
+            <button class="button" onclick="nextPage('Environmental', 'Financial', 'Environmental')">다음</button>        </section>
+
+        <!-- Financial Page -->
+        <section id="Financial" class="page hidden">
+            <h2>Financial</h2>
+            <ul>
+                <li><input type="checkbox"> 안정적인 고정 수입이 있다.</li>
+                <li><input type="checkbox"> 가계부를 작성한다.</li>
+                <li><input type="checkbox"> 급여로 고정 지출과 생활비를 감당할 수 있다.</li>
+                <li><input type="checkbox"> 부채가 없거나, 있어도 이를 갚아가는 안정적인 계획이 있다.</li>
+                <li><input type="checkbox"> 휴가비, 비상금 마련 등을 목적으로 충분한 저축을 한다.</li>
+                <li><input type="checkbox"> 미래 계획이 분명하고, 이에 맞춰 저축과 재테크를 적절히 배분한다.</li>
+                <li><input type="checkbox"> 전문가의 도움을 받아 자산 관리를 설계한 적이 있다.</li>
+                <li><input type="checkbox"> 급여를 받으면 저축을 먼저 한 후에 남은 돈을 사용한다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Environmental')">이전</button>
+            <button class="button" onclick="nextPage('Financial', 'Occupational', 'Financial')">다음</button>        </section>
+
+        <!-- Occupational Page -->
+        <section id="Occupational" class="page hidden">
+            <h2>Occupational</h2>
+            <ul>
+                <li><input type="checkbox"> 현재의 직업에 열정을 갖고 만족한다.</li>
+                <li><input type="checkbox"> 본인의 가치관에 알맞은 일을 하고 있다.</li>
+                <li><input type="checkbox"> 직장 상사, 동료와 자유로운 의사소통을 하고 있다.</li>
+                <li><input type="checkbox"> 일을 마치고 귀가하는 길에 보람을 느낀다.</li>
+                <li><input type="checkbox"> 직업을 통해 새로운 재능과 지식을 쌓을 수 있는 기회를 발견한다.</li>
+                <li><input type="checkbox"> 일하는 시간과 휴식 시간을 적절하게 분배한다.</li>
+                <li><input type="checkbox"> 일한 결과물을 보면 스스로를 칭찬하고 싶다.</li>
+            </ul>
+            <button class="button" onclick="prevPage('Financial')">이전</button>
+            <button class="button" onclick="nextPage('Occupational', 'result-page', 'Occupational')">결과 보기</button>
+        </section>
+
+        <!-- Result Page -->
+        <section id="result-page" class="page hidden">
+            <h2>결과</h2>
+            <p id="result"></p>
+            <div id="chart-container">
+                <canvas id="result-chart"></canvas>
+            </div>
+            <button class="button" onclick="resetScores()">처음으로</button>        </section>
+    </main>
+</body>
+</html>
